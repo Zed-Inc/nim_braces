@@ -42,6 +42,7 @@ proc parseJsonFile*(filepath: string): tuple =
 ]#
 proc parseNimFile*(nimFiles: seq[string], syntax: tuple) =
   var readFiles: seq[string]
+  var newFile: string = ""
   const
     indentSize = 2
   
@@ -58,10 +59,15 @@ proc parseNimFile*(nimFiles: seq[string], syntax: tuple) =
   os.setCurrentDir(os.getCurrentDir() & ".tmp/")
 
   var toWrite: File
+
   for i,file in readFiles:
     toWrite = open(os.getCurrentDir() & nimFiles[i], fmWrite)
     for character in file:
-      if character == "{" and character.next == " ":
+      if character == syntax.func_open and character.next == " " or "": # we have found our opening bracket
+        newFile.add("=\n" & indentSize) # add a new line and the defined indent size
+        
+      else:
+        newFile.add(character)
         
 
 
@@ -70,29 +76,36 @@ proc parseNimFile*(nimFiles: seq[string], syntax: tuple) =
 
 
 
-
+# why am i getting a complex statement error?
 proc executeNimFiles*(files: seq[string]): bool =
-  var command = "nim c -r "
-  var nimFiles: seq[string]
+
+  var command: string = "nim c -r "
+  # var nimFiles: seq[string]
   
   os.setCurrentDir(os.getCurrentDir() & ".tmp/")
-  # get all of our converted nim files
-  for f in os.walkFiles(".tmp/*.nim"):
-    nimFiles.add(f)
 
-  #loop through the sequence and add our files to it
-  for i in nimFiles:
-    command = command & i & " "
+  for f in files:
+    command = command & f & " "
+
+  # # get all of our converted nim files
+  # for f in os.walkFiles("/*.nim"):
+  #   nimFiles.add(f)
+
+  # #loop through the sequence and add our files to it
+  # for i in nimFiles:
+  #   command = command & i & " "
 
   # run our nim compile command and cd back up to our main directory and delete the .tmp direcotry
-  if (os.execShellCmd(command)) == 0:
-    discard os.execShellCmd("cd ..")
+  # there's probably a cleaner way to move back up out of the directory 
+  if os.execShellCmd(command) == 0:
+    assert os.execShellCmd("cd ..") == 0
     os.removeDir(".tmp")
     return true
   else:
-    discard os.execShellCmd("cd ..")
+    assert os.execShellCmd("cd ..") == 0
     os.removeDir(".tmp")
     printInfo("Files could not be compiled!, .tmp/ will be deleted",1)
+
     return false
 
     

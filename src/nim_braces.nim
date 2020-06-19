@@ -2,7 +2,7 @@
 # uses this file as the main entry point of the application.
 
 
-import os
+import os, strutils
 
 import ./helpers
 
@@ -10,7 +10,7 @@ proc main() =
   var filesToParse = commandLineParams() # get all the files passed in
   let jsonSyntax = parseJsonFile("~/.config/nim_braces/syntax.json")
   parseNimFile(filesToParse, jsonSyntax)
-  discard executeNimFiles(filesToParse)
+  assert executeNimFiles(filesToParse)
  
 # enter main
 main()
