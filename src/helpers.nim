@@ -1,5 +1,6 @@
 import terminal
 import json
+import strutils
 from os import nil
 
 # print updates to the console with colourful keywords
@@ -40,12 +41,22 @@ proc parseJsonFile*(filepath: string): tuple =
   we need to account for using those other things on functions {.gcsafe, .header etc...}
   we can do so by checking if the brace we are currently on is the last brace on the line, and there are no characters next to it
 ]#
-proc parseNimFile*(nimFiles: seq[string], syntax: tuple) =
-  var readFiles: seq[string]
-  var newFile: string = ""
-  const
-    indentSize = 2
+proc parseNimFile*(nimFiles: seq[string], syntax: tuple): bool =
+  var 
+    # store the contents of each file we open to parse
+    readFiles: seq[string]
   
+    # store our changed files
+    newFiles: seq[string]
+  
+    # temporary variable to store our changed file
+    fileParsed: seq[string]
+    currLine: string
+    keyWord: string
+  
+  const indentSize = 2
+  
+  # 
   for i in 0..<nimFiles.len:
     try:
       readFiles.add(readAll(open(nimFiles[i])))
@@ -58,25 +69,50 @@ proc parseNimFile*(nimFiles: seq[string], syntax: tuple) =
   os.createDir(newPath)
   os.setCurrentDir(os.getCurrentDir() & ".tmp/")
 
+
+  # the output file we will be writing to
   var toWrite: File
 
   for i,file in readFiles:
-    toWrite = open(os.getCurrentDir() & nimFiles[i], fmWrite)
-    for character in file:
-      if character == syntax.func_open and character.next == " " or "": # we have found our opening bracket
-        newFile.add("=\n" & indentSize) # add a new line and the defined indent size
+    # open the output file with the correct name
+    try:
+      toWrite = open(os.getCurrentDir() & nimFiles[i], fmWrite)
+    except IOError:
+      printInfo("failed to create/open file " & nimFiles[i],1)
+      assert os.execShellCmd("cd ..") == 0 
+      return false
+    fileParsed = file.splitLines
+
+    # loop thorough the sequence of lines
+    for line in fileParsed:
+      currLine = line
+      if currLine.startswith("for") and currLine.endsWith(syntax.f_open):
+        currLine[currLine.len] = ":\n" & indentSize
+        keyWord = "for"
+      elif currLine.endsWith(syntax.f_close) and keyWord == "for":
+        currLine[currLine.len] = "\n"
+      elif currLine.startsWith("proc") and currLine.endsWith(syntax.func_open):
+        currLine[currLine.len] = "=\n" & indentSize
+        keyWord = "proc"
+      elif currLine.endsWith(syntax.func_close) and keyWord == "proc":
+        currLine[currLine.len] = "\n"
+      elif currLine.startsWith "#":
+        continue
+
+    # add the edited line to the parsed files 
+    newFiles.add(currLine)
+    currLine = "" # clear the lines
         
-      else:
-        newFile.add(character)
-        
+
+  #------LOOP END--------->
+
+  return true
+#------FUNCTION END------>
 
 
-  # while true:
 
 
 
-
-# why am i getting a complex statement error?
 proc executeNimFiles*(files: seq[string]): bool =
 
   var command: string = "nim c -r "

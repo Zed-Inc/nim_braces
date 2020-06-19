@@ -1,6 +1,6 @@
 # Nim Braces
 
-Nim-Braces is a binary that allows you to write vlaid nim code with braces
+Nim-Braces is a binary that allows you to write valid nim code with braces
 This helps remove the need for whitespace indentation and helps people transition from braces indentation -> nim's whitespace indentation
 
 ## Process
