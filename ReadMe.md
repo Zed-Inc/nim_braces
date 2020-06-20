@@ -5,6 +5,7 @@ This helps remove the need for whitespace indentation* and helps people transiti
 
 *NOTE: it is still recommended you use normal nim whitespace indentation of 2 spaces when structuring your code,
        this transpiler does not enforce indentation it uses the indentation that is already placed in the file
+       also make sure there is a space between an opening brace and the end of the if/while/proc definition
 
 ## Running
 for help run nim_braces --help
