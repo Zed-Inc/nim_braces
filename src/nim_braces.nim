@@ -72,7 +72,7 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
     changedLine: string
     keyWord: string
   
-  const indentSize:int = 2
+  # const indentSize:int = 2
   
   # 
   for i in 0..<nimFiles.len:
@@ -113,27 +113,26 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
         echo "removing closing brace of for loop" #DEBUG
         currLine[currLine.len - 1] = '\n'
       #------------------------------------->
+      #--------- WHILE LOOP CHECKS ----------->
+      elif currLine.startswith("while") and currLine.endsWith(syntax.while_open):
+        currLine[currLine.len] = ':'
+        echo "removing opening brace of while loop"
+        keyWord = "while"
+      elif currLine.endsWith(syntax.while_close) and keyWord == "while":
+        echo "removing closing brace of while loop" #DEBUG
+        currLine[currLine.len - 1] = '\n'
+      #-------------------------------------->
 
       #---------PROC FUNCTION CHECKS-------->
       elif currLine.startsWith("proc") and currLine.endsWith(syntax.func_open):
         echo "checking for proc function: line length " & $currLine.len #DEBUG
-        currLine[currLine.len - 1] = '='
-        # currLine[currLine.len-1] = '\n'
+        currLine[currLine.len - 2] = '='
+        currLine[currLine.len - 1] = '\n'
         keyWord = "proc"
       elif currLine.endsWith(syntax.func_close) and keyWord == "proc":
         echo "removing closing brace of function: line length " & $currLine.len #DEBUG
         currLine[currLine.len - 1] = '\n' # delete the func_close char that was here
       #------------------------------------>
-
-      #--------- WHILE LOOP CHECKS ----------->
-      if currLine.startswith("while") and currLine.endsWith(syntax.while_open):
-        currLine[currLine.len - 1] = ':'
-        keyWord = "while"
-      elif currLine.endsWith(syntax.for_close) and keyWord == "while":
-        echo "removing closing brace of while loop" #DEBUG
-        currLine[currLine.len - 1] = '\n'
-      #------------------------------------->
-
       #---------COMMENT CHECK--------------->
       # skip any line that starts with the comment symbol
       elif currLine.startsWith("#"):
