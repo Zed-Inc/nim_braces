@@ -69,6 +69,7 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
     # temporary variable to store our changed file
     fileParsed: seq[string]
     currLine: string
+    changedLine: string
     keyWord: string
   
   const indentSize:int = 2
@@ -103,44 +104,61 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
     # loop thorough the sequence of lines
     for line in fileParsed:
       currLine = line
+
       #--------- FOR LOOP CHECKS ----------->
       if currLine.startswith("for") and currLine.endsWith(syntax.for_open):
         currLine[currLine.len - 1] = ':'
         keyWord = "for"
       elif currLine.endsWith(syntax.for_close) and keyWord == "for":
         echo "removing closing brace of for loop" #DEBUG
-        currLine[currLine.len - 1] = ' '
+        currLine[currLine.len - 1] = '\n'
       #------------------------------------->
+
       #---------PROC FUNCTION CHECKS-------->
       elif currLine.startsWith("proc") and currLine.endsWith(syntax.func_open):
         echo "checking for proc function: line length " & $currLine.len #DEBUG
         currLine[currLine.len - 1] = '='
+        # currLine[currLine.len-1] = '\n'
         keyWord = "proc"
       elif currLine.endsWith(syntax.func_close) and keyWord == "proc":
         echo "removing closing brace of function: line length " & $currLine.len #DEBUG
-        currLine[currLine.len - 1] = ' ' # delete the func_close char that was here
+        currLine[currLine.len - 1] = '\n' # delete the func_close char that was here
       #------------------------------------>
 
-      #---------COMMENT CHECK-------------->
+      #--------- WHILE LOOP CHECKS ----------->
+      if currLine.startswith("while") and currLine.endsWith(syntax.while_open):
+        currLine[currLine.len - 1] = ':'
+        keyWord = "while"
+      elif currLine.endsWith(syntax.for_close) and keyWord == "while":
+        echo "removing closing brace of while loop" #DEBUG
+        currLine[currLine.len - 1] = '\n'
+      #------------------------------------->
+
+      #---------COMMENT CHECK--------------->
       # skip any line that starts with the comment symbol
       elif currLine.startsWith("#"):
         continue
       #----------------------------------->
+      else:
+       currLine.add('\n')
+      
+      changedLine.add(currLine)
+      currLine = "" # clear the lines
     # add the edited line to the parsed files 
-    newFiles.add(currLine)
+    echo changedLine
+    newFiles.add(changedLine)
     # echo currLine
-    currLine = "" # clear the lines
-        
+    
 
-  # write the files
-  var file: File
-  for i,f in newFiles:
-    try:
-      file = open(nimFiles[i],fmReadWriteExisting)
-      file.write(f)
-    except IOError:
-      printInfo(nimFiles[i] & " could not be opened",1)
-      break
+  # # write the files
+  # var file: File
+  # for i,f in newFiles:
+  #   try:
+  #     file = open(nimFiles[i],fmReadWriteExisting)
+  #     file.write(f)
+  #   except IOError:
+  #     printInfo(nimFiles[i] & " could not be opened",1)
+  #     break
     
 
 
