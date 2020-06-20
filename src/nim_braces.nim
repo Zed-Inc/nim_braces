@@ -105,20 +105,25 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
     for line in fileParsed:
       currLine = line
 
+      #[
+        For the for loops and while loops we need to chop off all whitespace from the start and end
+      #]#
       #--------- FOR LOOP CHECKS ----------->
-      if currLine.startswith("for") and currLine.endsWith(syntax.for_open):
-        currLine[currLine.len - 1] = ':'
+      if currLine.strip.startswith("for") and currLine.endsWith(syntax.for_open):
+        currLine[currLine.len - 2] = ':'
+        currLine[currLine.len - 1] = '\n'
         keyWord = "for"
-      elif currLine.endsWith(syntax.for_close) and keyWord == "for":
+      elif currLine.strip.endsWith(syntax.for_close) and keyWord == "for":
         echo "removing closing brace of for loop" #DEBUG
         currLine[currLine.len - 1] = '\n'
       #------------------------------------->
       #--------- WHILE LOOP CHECKS ----------->
-      elif currLine.startswith("while") and currLine.endsWith(syntax.while_open):
-        currLine[currLine.len] = ':'
+      elif currLine.strip.startswith("while") and currLine.endsWith(syntax.while_open):
+        currLine[currLine.len - 2] = ':'
+        currLine[currLine.len - 1] = '\n'
         echo "removing opening brace of while loop"
         keyWord = "while"
-      elif currLine.endsWith(syntax.while_close) and keyWord == "while":
+      elif currLine.strip.endsWith(syntax.while_close) and keyWord == "while":
         echo "removing closing brace of while loop" #DEBUG
         currLine[currLine.len - 1] = '\n'
       #-------------------------------------->
@@ -129,13 +134,13 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
         currLine[currLine.len - 2] = '='
         currLine[currLine.len - 1] = '\n'
         keyWord = "proc"
-      elif currLine.endsWith(syntax.func_close) and keyWord == "proc":
+      elif currLine.strip.endsWith(syntax.func_close) and keyWord == "proc":
         echo "removing closing brace of function: line length " & $currLine.len #DEBUG
         currLine[currLine.len - 1] = '\n' # delete the func_close char that was here
       #------------------------------------>
       #---------COMMENT CHECK--------------->
       # skip any line that starts with the comment symbol
-      elif currLine.startsWith("#"):
+      elif currLine.strip.startsWith("#"):
         continue
       #----------------------------------->
       else:
