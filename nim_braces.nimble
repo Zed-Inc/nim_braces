@@ -8,7 +8,6 @@ srcDir        = "src"
 bin           = @["nim_braces"]
 
 
-
 # Dependencies
 
 requires "nim >= 1.2.0"
