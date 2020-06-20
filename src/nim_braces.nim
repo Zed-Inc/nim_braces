@@ -22,24 +22,35 @@ proc printInfo*(contents: string, infoType: int, output = stdout) =
 
 
 
+type
+  Syntax = object
+    func_open  : string
+    func_close : string
+    for_open   : string
+    for_close  : string 
+    while_open : string
+    while_close: string
+      
 
 
-proc parseJsonFile*(filepath: string): tuple =
+## Parse our Syntax.json file and return a named tuple of our valid syntax
+proc parseJsonFile*(filepath: string): Syntax =
   echo "parsing syntax file"
-  var file = filepath.open()
-  var json = parseJson(file.readAll())
-  var syntax: tuple[func_open: string, func_close: string, f_open: string, f_close:string, w_open:string, w_close:string]
-  # initalise the tuple
-  syntax = (func_open  : json["function-opening"].getStr, 
-            func_close : json["function-closing"].getStr,  
-            f_open     : json["for-open"].getStr,
-            f_close    : json["for-close"].getStr,
-            w_open     : json["while-open"].getStr,
-            w_close    : json["while-close"].getStr
-            )
+  # parse the json file directly to an object
+  var syntax = to((parseJson(open(filepath).readAll)), Syntax)
+
   return syntax
+  # var syntax: tuple[func_open: string, func_close: string, f_open: string, f_close:string, w_open:string, w_close:string]
+  # # initalise the tuple
+  # syntax = (func_open  : json["function-opening"].getStr, 
+  #           func_close : json["function-closing"].getStr,  
+  #           f_open     : json["for-open"].getStr,
+  #           f_close    : json["for-close"].getStr,
+  #           w_open     : json["while-open"].getStr,
+  #           w_close    : json["while-close"].getStr
+            
 
-
+  
 
 
 #[
@@ -47,7 +58,7 @@ proc parseJsonFile*(filepath: string): tuple =
   we need to account for using those other things on functions {.gcsafe, .header etc...}
   we can do so by checking if the brace we are currently on is the last brace on the line, and there are no characters next to it
 ]#
-proc parseNimFile*(nimFiles: seq[string], syntax: tuple): bool =
+proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
   var 
     # store the contents of each file we open to parse
     readFiles: seq[string]
@@ -60,7 +71,7 @@ proc parseNimFile*(nimFiles: seq[string], syntax: tuple): bool =
     currLine: string
     keyWord: string
   
-  const indentSize = 2
+  const indentSize:int = 2
   
   # 
   for i in 0..<nimFiles.len:
@@ -76,33 +87,39 @@ proc parseNimFile*(nimFiles: seq[string], syntax: tuple): bool =
   os.setCurrentDir(os.getCurrentDir() & ".tmp/")
 
 
-  # the output file we will be writing to
-  var toWrite: File
+  # the output file we will be writing to 
+  # var toWrite: File
 
   for i,file in readFiles:
     # open the output file with the correct name
-    try:
-      toWrite = open(os.getCurrentDir() & nimFiles[i], fmWrite)
-    except IOError:
-      printInfo("failed to create/open file " & nimFiles[i],1)
-      assert os.execShellCmd("cd ..") == 0 
-      return false
+    # try:
+    #   toWrite = open(os.getCurrentDir() & nimFiles[i], fmWrite)
+    # except IOError:
+    #   printInfo("failed to create/open file " & nimFiles[i],1)
+    #   # assert os.execShellCmd("cd ..") == 0 
+    #   return false
     fileParsed = file.splitLines
-
+    echo "parsing file: " & nimFiles[i]
     # loop thorough the sequence of lines
     for line in fileParsed:
       currLine = line
-      if currLine.startswith("for") and currLine.endsWith(syntax.f_open):
-        currLine[currLine.len] = ":\n" & indentSize
+      if currLine.startswith("for") and currLine.endsWith(syntax.for_open):
+        currLine[currLine.len] = ':'
         keyWord = "for"
-      elif currLine.endsWith(syntax.f_close) and keyWord == "for":
-        currLine[currLine.len] = "\n"
+
+      elif currLine.endsWith(syntax.for_close) and keyWord == "for":
+        currLine[currLine.len] = '\n'
+      
       elif currLine.startsWith("proc") and currLine.endsWith(syntax.func_open):
-        currLine[currLine.len] = "=\n" & indentSize
+        echo "checking for proc" #DEBUG
+        currLine[currLine.len - 1] = '='
         keyWord = "proc"
+      
       elif currLine.endsWith(syntax.func_close) and keyWord == "proc":
-        currLine[currLine.len] = "\n"
-      elif currLine.startsWith "#":
+        currLine[currLine.len] = ' ' # delete the func_close char that was here
+      
+      # skip any line that starts with the comment symbol
+      elif currLine.startsWith("#"):
         continue
 
     # add the edited line to the parsed files 
@@ -110,7 +127,13 @@ proc parseNimFile*(nimFiles: seq[string], syntax: tuple): bool =
     currLine = "" # clear the lines
         
 
-  #------LOOP END--------->
+  # write the files
+  var file: File
+  for i,f in newFiles:
+    assert file.open(nimFiles[i],fmWrite)
+    file.write(f)
+    
+
 
   return true
 #------FUNCTION END------>
@@ -119,7 +142,7 @@ proc parseNimFile*(nimFiles: seq[string], syntax: tuple): bool =
 
 
 
-proc executeNimFiles*(files: seq[string]): bool =
+proc executeNimFiles(files: seq[string]): bool =
 
   var command: string = "nim c -r "
   # var nimFiles: seq[string]
@@ -153,23 +176,22 @@ proc executeNimFiles*(files: seq[string]): bool =
     
 
 #-------------MAIN PROGRAM-------------------->
-proc main() = 
-  if commandLineParams().contains("--help"):
-    echo """
-    Nim braces is a CLI to convert nim code with braces to nim code without braces
-    Syntax is defined in a json file called 'syntax.json' in some location of which i dont know where
+if commandLineParams().contains("--help"):
+  echo """
+  Nim braces is a CLI to convert nim code with braces to nim code without braces
+  Syntax is defined in a json file called 'syntax.json' in some location of which i dont know where
 
-    Usage
-      'braces->nim {FILE NAMES HERE}'
-      Where '{FILE NAMES HERE}' is the name of your nim source code files which have 
-      said braces in it or really anything you want as opening/closing brackets
-      this can all be easily changed in the 'syntax.json' file when you find it
+  Usage
+    'braces->nim {FILE NAMES HERE}'
+    Where '{FILE NAMES HERE}' is the name of your nim source code files which have 
+    said braces in it or really anything you want as opening/closing brackets
+    this can all be easily changed in the 'syntax.json' file when you find it
 
-    """
-  var filesToParse = commandLineParams() # get all the files passed in
-  var jsonSyntax = parseJsonFile("syntax.json") # parse the json file storing our syntax
-  parseNimFile(filesToParse, jsonSyntax)
-  assert executeNimFiles(filesToParse)
- 
-# enter main
-main()
+  """
+var filesToParse = commandLineParams() # get all the files passed in
+
+var jsonSyntax = parseJsonFile("syntax.json") # parse the json file storing our syntax
+
+assert parseNimFile(filesToParse, jsonSyntax)
+
+assert executeNimFiles(filesToParse)

@@ -1,12 +1,8 @@
 {
-  "function-syntax": {
-    "function-opening": "{",
-    "function-closing": "}"
-  },
-  "loop-syntax": {
-    "for-open": "{",
-    "for-close": "}",
-    "while-open": "{",
-    "while-close": "}"
-  }
+  "func_open": "{",
+  "func_close": "}",
+  "for_open": "{",
+  "for_close": "}",
+  "while_open": "{",
+  "while_close": "}"
 }
