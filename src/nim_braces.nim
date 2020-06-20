@@ -157,10 +157,10 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
 
   try:
     # create our .tmp/ directory in the src folder
-    echo "current direcotry: " & os.getCurrentDir()
+    # echo "current direcotry: " & os.getCurrentDir() # DEBUG
     os.createDir(os.getCurrentDir() & "/convertedFiles/")
     os.setCurrentDir("convertedFiles") # move into our newly created direcotry
-    echo "new directory: " & os.getCurrentDir()
+    # echo "new directory: " & os.getCurrentDir() # DEBUG
   except OSError:
     printInfo("directory could not be created",1)
     return false
