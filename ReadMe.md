@@ -7,4 +7,4 @@ This helps remove the need for whitespace indentation* and helps people transiti
        this transpiler does not enforce indentation it uses the indentation that is already placed in the file
 
 ## Running
-for help run braces->nim --help
+for help run nim_braces --help
