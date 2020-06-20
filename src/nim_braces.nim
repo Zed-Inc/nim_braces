@@ -150,7 +150,7 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
       changedLine.add(currLine)
       currLine = "" # clear the lines
     # add the edited line to the parsed files 
-    echo changedLine
+    # echo changedLine
     newFiles.add(changedLine)
     changedLine = ""
     # echo currLine
