@@ -23,6 +23,7 @@ proc printInfo*(contents: string, infoType: int, output = stdout) =
 
 
 type
+  # store the string that is our syntax
   Syntax = object
     func_open  : string
     func_close : string
@@ -61,16 +62,16 @@ proc parseJsonFile*(filepath: string): Syntax =
 proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
   var 
     # store the contents of each file we open to parse
-    readFiles: seq[string]
+    readFiles  : seq[string]
   
     # store our changed files
-    newFiles: seq[string]
+    newFiles   : seq[string]
   
     # temporary variable to store our changed file
-    fileParsed: seq[string]
-    currLine: string
+    fileParsed : seq[string]
+    currLine   : string
     changedLine: string
-    keyWord: string
+    keyWord    : string
   
   # const indentSize:int = 2
   
@@ -82,10 +83,10 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
      discard
 
   # make our .tmp/ directory
-  let directory = os.getCurrentDir()
-  let newPath = directory & ".tmp/"
-  os.createDir(newPath)
-  os.setCurrentDir(os.getCurrentDir() & ".tmp/")
+  # let directory = os.getCurrentDir()
+  # let newPath = directory & ".tmp/"
+  # os.createDir(newPath)
+  # os.setCurrentDir(os.getCurrentDir() & ".tmp/")
 
 
   # the output file we will be writing to 
@@ -121,7 +122,7 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
       elif currLine.strip.startswith("while") and currLine.endsWith(syntax.while_open):
         currLine[currLine.len - 2] = ':'
         currLine[currLine.len - 1] = '\n'
-        echo "removing opening brace of while loop"
+        echo "removing opening brace of while loop" # DEBUG
         keyWord = "while"
       elif currLine.strip.endsWith(syntax.while_close) and keyWord == "while":
         echo "removing closing brace of while loop" #DEBUG
@@ -151,19 +152,32 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
     # add the edited line to the parsed files 
     echo changedLine
     newFiles.add(changedLine)
+    changedLine = ""
     # echo currLine
     
 
-  # # write the files
-  # var file: File
-  # for i,f in newFiles:
-  #   try:
-  #     file = open(nimFiles[i],fmReadWriteExisting)
-  #     file.write(f)
-  #   except IOError:
-  #     printInfo(nimFiles[i] & " could not be opened",1)
-  #     break
-    
+  try:
+    # create our .tmp/ directory in the src folder
+    echo "current direcotry: " & os.getCurrentDir()
+    os.createDir(os.getCurrentDir() & "/convertedFiles/")
+    os.setCurrentDir("convertedFiles") # move into our newly created direcotry
+    echo "new directory: " & os.getCurrentDir()
+  except OSError:
+    printInfo("directory could not be created",1)
+    return false
+
+  var file: File
+  for index,current in newFiles:
+    try:
+      file = open(nimFiles[index],fmWrite)
+      file.write(current)
+    except IOError:
+      printInfo("file could not be created",1)
+      return false
+  
+  echo "\nConverted files have been created in " & os.getCurrentDir()
+
+
 
 
   return true
@@ -172,7 +186,7 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
 
 
 
-
+# future feature?
 proc executeNimFiles(files: seq[string]): bool =
 
   var command: string = "nim c -r "
@@ -217,6 +231,12 @@ if commandLineParams().contains("--help"):
     Where '{FILE NAMES HERE}' is the name of your nim source code files which have 
     said braces in it or really anything you want as opening/closing brackets
     this can all be easily changed in the 'syntax.json' file when you find it
+
+
+  Some bugs/features?
+    - indentation is not forced, this program uses the pre-existing indentation of the file 
+    - make sure there is a gap/space between the end of your proc/if/while/for loop defintion and the opening 
+      brace of the function/loop other wise the last letter WILL BE CHOPPED OFF
 
   """
 var filesToParse = commandLineParams() # get all the files passed in
