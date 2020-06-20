@@ -4,5 +4,7 @@
   "for_open": "{",
   "for_close": "}",
   "while_open": "{",
-  "while_close": "}"
+  "while_close": "}",
+  "if_open": "{",
+  "if_close": "}"
 }
