@@ -111,7 +111,6 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
       #--------- WHILE LOOP CHECKS ----------->
       elif currLine.strip.startswith("while") and currLine.endsWith(syntax.while_open):
         currLine[currLine.len - 1] = ':'
-        # currLine.add("\n")
         # echo "removing opening brace of while loop" # DEBUG
         keyWord = "while"
       elif currLine.strip.endsWith(syntax.while_close) and keyWord == "while":
@@ -145,14 +144,13 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
       changedLine.add(currLine)
       currLine = "" # clear the lines
     # add the edited line to the parsed files 
-    # echo changedLine
+    # echo changedLine # DEBUG
     newFiles.add(changedLine)
     changedLine = ""
-    # echo currLine
     
 
   try:
-    # create our .tmp/ directory in the src folder
+    # create our .tmp/ directory in the same loactaion as the code is being run from folder
     # echo "current direcotry: " & os.getCurrentDir() # DEBUG
     os.createDir(os.getCurrentDir() & "/.tmp/")
     os.setCurrentDir(".tmp") # move into our newly created direcotry
