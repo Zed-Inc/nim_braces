@@ -98,7 +98,7 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
       #[
         For the for loops and while loops we need to chop off all whitespace from the start and end
       #]#
-      #--------- FOR LOOP CHECKS ----------->
+      #--------- FOR LOOP CHECKS ------------->
       if currLine.strip.startswith("for") and currLine.endsWith(syntax.for_open):
         # currLine[currLine.len - 2] = ':'
         currLine[currLine.len - 1] = ':'
@@ -106,38 +106,39 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
       elif currLine.strip.endsWith(syntax.for_close) and keyWord == "for":
         # echo "removing closing brace of for loop" #DEBUG
         currLine[currLine.len - 1] = ' '
-      #------------------------------------->
+      #--------------------------------------->
+
       #--------- WHILE LOOP CHECKS ----------->
       elif currLine.strip.startswith("while") and currLine.endsWith(syntax.while_open):
-        currLine[currLine.len - 2] = ':'
-        currLine[currLine.len - 1] = ' '
+        currLine[currLine.len - 1] = ':'
+        # currLine.add("\n")
         # echo "removing opening brace of while loop" # DEBUG
         keyWord = "while"
       elif currLine.strip.endsWith(syntax.while_close) and keyWord == "while":
         # echo "removing closing brace of while loop" #DEBUG
         currLine[currLine.len - 1] = ' '
-      #-------------------------------------->
-      #------- IF STATEMENT CHECKS ---------->
+      #--------------------------------------->
+
+      #------- IF STATEMENT CHECKS ----------->
       if currLine.strip.startswith("if") and currLine.endsWith(syntax.if_open):
-        # currLine[currLine.len - 2] = ':'
         currLine[currLine.len - 1] = ':'
         currLine.add("\n")
         keyWord = "if"
       elif currLine.strip.endsWith(syntax.if_close) and keyWord == "if":
         # echo "removing closing brace of if statement loop" #DEBUG
         currLine[currLine.len - 1] = ' '
-      #------------------------------------->
-      #---------PROC FUNCTION CHECKS-------->
+      #--------------------------------------->
+
+      #---------PROC FUNCTION CHECKS---------->
       elif currLine.startsWith("proc") and currLine.endsWith(syntax.func_open):
         # echo "checking for proc function: line length " & $currLine.len #DEBUG
-        # currLine[currLine.len - 2] = '='
         currLine[currLine.len - 1] = '='
         currLine.add("\n")
         keyWord = "proc"
       elif currLine.strip.endsWith(syntax.func_close) and keyWord == "proc":
         # echo "removing closing brace of function: line length " & $currLine.len #DEBUG
         currLine[currLine.len - 1] = ' ' # delete the func_close char that was here
-      #------------------------------------>
+      #--------------------------------------->
       else:
        currLine.add('\n')
       
