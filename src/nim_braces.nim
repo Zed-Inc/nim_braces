@@ -9,6 +9,10 @@ import json
 import strutils
 from os import nil
 
+
+const
+  Version = "0.5.0"
+
 # print updates to the console with colourful keywords
 proc printInfo*(contents: string, infoType: int, output = stdout) = 
   case infoType:
@@ -17,6 +21,16 @@ proc printInfo*(contents: string, infoType: int, output = stdout) =
     output.write("[ERROR]  ::  ")
     resetAttributes(output)
     output.writeLine(contents)
+  of 2:
+    setForegroundColor(output, fgCyan, true)
+    output.write("[PARSING] :: ")
+    resetAttributes(output)
+    output.write(contents & "\n")
+  of 3:
+    setForegroundColor(output, fgYellow, true)
+    output.write("[VERSION] :: ")
+    resetAttributes(output)
+    output.write(contents & "\n") 
   else:
     discard
 
@@ -38,7 +52,7 @@ type
 
 ## Parse our Syntax.json file and return a named tuple of our valid syntax
 proc parseJsonFile*(filepath: string): Syntax =
-  echo "parsing syntax file"
+  printInfo(filepath & " syntax file",2)
   # parse the json file directly to an object
   return to((parseJson(open(filepath).readAll)), Syntax)
 
@@ -73,26 +87,10 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
     except IOError:
      discard
 
-  # make our .tmp/ directory
-  # let directory = os.getCurrentDir()
-  # let newPath = directory & ".tmp/"
-  # os.createDir(newPath)
-  # os.setCurrentDir(os.getCurrentDir() & ".tmp/")
-
-
-  # the output file we will be writing to 
-  # var toWrite: File
 
   for i,file in readFiles:
-    # open the output file with the correct name
-    # try:
-    #   toWrite = open(os.getCurrentDir() & nimFiles[i], fmWrite)
-    # except IOError:
-    #   printInfo("failed to create/open file " & nimFiles[i],1)
-    #   # assert os.execShellCmd("cd ..") == 0 
-    #   return false
     fileParsed = file.splitLines
-    echo "parsing file: " & nimFiles[i]
+    printInfo(nimFiles[i],2)
     # loop thorough the sequence of lines
     for line in fileParsed:
       currLine = line
@@ -102,47 +100,44 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
       #]#
       #--------- FOR LOOP CHECKS ----------->
       if currLine.strip.startswith("for") and currLine.endsWith(syntax.for_open):
-        currLine[currLine.len - 2] = ':'
-        currLine[currLine.len - 1] = '\n'
+        # currLine[currLine.len - 2] = ':'
+        currLine[currLine.len - 1] = ':'
         keyWord = "for"
       elif currLine.strip.endsWith(syntax.for_close) and keyWord == "for":
         # echo "removing closing brace of for loop" #DEBUG
-        currLine[currLine.len - 1] = '\n'
+        currLine[currLine.len - 1] = ' '
       #------------------------------------->
       #--------- WHILE LOOP CHECKS ----------->
       elif currLine.strip.startswith("while") and currLine.endsWith(syntax.while_open):
         currLine[currLine.len - 2] = ':'
-        currLine[currLine.len - 1] = '\n'
+        currLine[currLine.len - 1] = ' '
         # echo "removing opening brace of while loop" # DEBUG
         keyWord = "while"
       elif currLine.strip.endsWith(syntax.while_close) and keyWord == "while":
         # echo "removing closing brace of while loop" #DEBUG
-        currLine[currLine.len - 1] = '\n'
+        currLine[currLine.len - 1] = ' '
       #-------------------------------------->
       #------- IF STATEMENT CHECKS ---------->
       if currLine.strip.startswith("if") and currLine.endsWith(syntax.if_open):
-        currLine[currLine.len - 2] = ':'
-        currLine[currLine.len - 1] = '\n'
+        # currLine[currLine.len - 2] = ':'
+        currLine[currLine.len - 1] = ':'
+        currLine.add("\n")
         keyWord = "if"
       elif currLine.strip.endsWith(syntax.if_close) and keyWord == "if":
         # echo "removing closing brace of if statement loop" #DEBUG
-        currLine[currLine.len - 1] = '\n'
+        currLine[currLine.len - 1] = ' '
       #------------------------------------->
       #---------PROC FUNCTION CHECKS-------->
       elif currLine.startsWith("proc") and currLine.endsWith(syntax.func_open):
         # echo "checking for proc function: line length " & $currLine.len #DEBUG
-        currLine[currLine.len - 2] = '='
-        currLine[currLine.len - 1] = '\n'
+        # currLine[currLine.len - 2] = '='
+        currLine[currLine.len - 1] = '='
+        currLine.add("\n")
         keyWord = "proc"
       elif currLine.strip.endsWith(syntax.func_close) and keyWord == "proc":
         # echo "removing closing brace of function: line length " & $currLine.len #DEBUG
-        currLine[currLine.len - 1] = '\n' # delete the func_close char that was here
+        currLine[currLine.len - 1] = ' ' # delete the func_close char that was here
       #------------------------------------>
-      #---------COMMENT CHECK--------------->
-      # skip any line that starts with the comment symbol
-      elif currLine.strip.startsWith("#"):
-        continue
-      #----------------------------------->
       else:
        currLine.add('\n')
       
@@ -158,8 +153,8 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
   try:
     # create our .tmp/ directory in the src folder
     # echo "current direcotry: " & os.getCurrentDir() # DEBUG
-    os.createDir(os.getCurrentDir() & "/convertedFiles/")
-    os.setCurrentDir("convertedFiles") # move into our newly created direcotry
+    os.createDir(os.getCurrentDir() & "/.tmp/")
+    os.setCurrentDir(".tmp") # move into our newly created direcotry
     # echo "new directory: " & os.getCurrentDir() # DEBUG
   except OSError:
     printInfo("directory could not be created",1)
@@ -174,11 +169,7 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
       printInfo("file could not be created",1)
       return false
   
-  echo "\nConverted files have been created in " & os.getCurrentDir()
-
-
-
-
+  echo "Converted files have been created in " & os.getCurrentDir()
   return true
 #------FUNCTION END------>
 
@@ -220,28 +211,47 @@ proc executeNimFiles(files: seq[string]): bool =
     
 
 #-------------MAIN PROGRAM-------------------->
-if commandLineParams().contains("--help"):
+
+var params = commandLineParams()
+if params[0] == "--help":
   echo """
   Nim braces is a CLI to convert nim code with braces to nim code without braces
   Syntax is defined in a json file called 'syntax.json' in some location of which i dont know where
 
   Usage
-    'braces->nim {FILE NAMES HERE}'
-    Where '{FILE NAMES HERE}' is the name of your nim source code files which have 
+    'nim_braces {FLAGS} {FILE NAMES HERE}'
+
+    Where '{FLAGS}' are the flags you want to use, see the Flags section below
+
+    And where '{FILE NAMES HERE}' is the name of your nim source code files which have 
     said braces in it or really anything you want as opening/closing brackets
     this can all be easily changed in the 'syntax.json' file when you find it
 
-
+  FLAGS
+    --execute       this will compile and run the files you pass in
+                    
   Some bugs/features?
     - indentation is not forced, this program uses the pre-existing indentation of the file 
     - make sure there is a gap/space between the end of your proc/if/while/for loop defintion and the opening 
       brace of the function/loop other wise the last letter WILL BE CHOPPED OFF
-
+    - at the current version of this transpiler it will only support files it will not support 
+      folders and directory structures
   """
-var filesToParse = commandLineParams() # get all the files passed in
+else:
+  var execute = false
+  var filesToParse: seq[string]
+  if params[0] == "--execute":
+    execute = true
+    filesToParse = params[1..params.len-1]
+    echo filesToParse
+  else:
+    filesToParse = params
+    echo filesToParse
 
-var jsonSyntax = parseJsonFile("syntax.json") # parse the json file storing our syntax
+  printInfo(Version,3)
+  var jsonSyntax = parseJsonFile("syntax.json") # parse the json file storing our syntax
+  assert parseNimFile(filesToParse, jsonSyntax)
+  # check if the user wants to also compile and run the files
+  if execute:
+    assert executeNimFiles(filesToParse)
 
-assert parseNimFile(filesToParse, jsonSyntax)
-
-# assert executeNimFiles(filesToParse)
