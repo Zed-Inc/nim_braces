@@ -34,7 +34,8 @@ proc printInfo*(contents: string, infoType: int, output = stdout) =
   else:
     discard
 
-
+# a custom starts with implementation, checks an array of values against a string
+# returns true if there is a match else false
 proc startsWith(input: string, checks: openArray[string]): bool =
   for c in checks:
     if input.startsWith(c): return true
@@ -80,11 +81,11 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
     fileParsed : seq[string]
     currLine   : string
     changedLine: string
+    # store the lines keyword
     keyWord    : string
   
-  # const indentSize:int = 2
   
-  # 
+  # read all the files that were parsed in 
   for i in 0..<nimFiles.len:
     try:
       readFiles.add(readAll(open(nimFiles[i])))
@@ -98,48 +99,45 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
     # loop thorough the sequence of lines
     for line in fileParsed:
       currLine = line
+
       #--------- FOR LOOP CHECKS ------------->
       if currLine.strip.startswith("for") and currLine.endsWith(syntax.for_open):
-        # currLine[currLine.len - 2] = ':'
         currLine[currLine.len - 1] = ':'
+        currLine.add("\n")
         keyWord = "for"
       elif currLine.strip.endsWith(syntax.for_close) and keyWord == "for":
-        # echo "removing closing brace of for loop" #DEBUG
-        currLine[currLine.len - 1] = ' '
+        currLine[currLine.len - 1] = '\n'
       #--------------------------------------->
 
       #--------- WHILE LOOP CHECKS ----------->
       elif currLine.strip.startswith("while") and currLine.endsWith(syntax.while_open):
         currLine[currLine.len - 1] = ':'
-        # echo "removing opening brace of while loop" # DEBUG
+        currLine.add("\n")
         keyWord = "while"
       elif currLine.strip.endsWith(syntax.while_close) and keyWord == "while":
-        # echo "removing closing brace of while loop" #DEBUG
         currLine[currLine.len - 1] = ' '
       #--------------------------------------->
 
       #------- IF STATEMENT CHECKS ----------->
-      if currLine.strip.startswith(["else","if","elif"]) and currLine.endsWith(syntax.if_open):
+      elif currLine.strip.startswith(["else","if","elif"]) and currLine.endsWith(syntax.if_open):
           currLine[currLine.len - 1] = ':'
           currLine.add("\n")
-        
+          keyWord = "if"
       elif currLine.strip.endsWith(syntax.if_close) and keyWord == "if":
-        # echo "removing closing brace of if statement loop" #DEBUG
-        currLine[currLine.len - 1] = ' '
+        currLine[currLine.len - 1] = '\n'
       #--------------------------------------->
 
       #---------PROC FUNCTION CHECKS---------->
       elif currLine.startsWith("proc") and currLine.endsWith(syntax.func_open):
-        # echo "checking for proc function: line length " & $currLine.len #DEBUG
         currLine[currLine.len - 1] = '='
         currLine.add("\n")
         keyWord = "proc"
       elif currLine.strip.endsWith(syntax.func_close) and keyWord == "proc":
-        # echo "removing closing brace of function: line length " & $currLine.len #DEBUG
-        currLine[currLine.len - 1] = ' ' # delete the func_close char that was here
+        currLine[currLine.len - 1] = '\n' # delete the func_close char that was here
       #--------------------------------------->
       else:
-       currLine.add('\n')
+        # if keyWord.startsWith(["proc","if","elif","for","else","while"]):
+        currLine.add('\n')
       
       changedLine.add(currLine)
       currLine = "" # clear the lines
@@ -200,7 +198,6 @@ proc executeNimFiles(files: seq[string]): bool =
     
 
 #-------------MAIN PROGRAM-------------------->
-
 var params = commandLineParams()
 if params[0] == "--help":
   echo """
@@ -232,10 +229,10 @@ else:
   if params[0] == "--execute":
     execute = true
     filesToParse = params[1..params.len-1]
-    echo filesToParse
+    # echo filesToParse #DEBUG
   else:
     filesToParse = params
-    echo filesToParse
+    # echo filesToParse #DEBUG
 
   printInfo(Version,3)
   var jsonSyntax = parseJsonFile("syntax.json") # parse the json file storing our syntax
