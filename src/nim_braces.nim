@@ -18,7 +18,7 @@ proc printInfo*(contents: string, infoType: int, output = stdout) =
   case infoType:
   of 1:
     setForegroundColor(output,fgMagenta,true)
-    output.write("[ERROR]  ::  ")
+    output.write("[ERROR] :: ")
     resetAttributes(output)
     output.writeLine(contents)
   of 2:
@@ -31,6 +31,11 @@ proc printInfo*(contents: string, infoType: int, output = stdout) =
     output.write("[VERSION] :: ")
     resetAttributes(output)
     output.write(contents & "\n") 
+  of 4:
+    setForegroundColor(output,fgBlue, true)
+    output.write("[INFO]    :: ")
+    resetAttributes(output)
+    output.write(contents & "\n")
   else:
     discard
 
@@ -73,13 +78,13 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
   var 
     # store the contents of each file we open to parse
     readFiles  : seq[string]
-  
     # store our changed files
     newFiles   : seq[string]
-  
-    # temporary variable to store our changed file
+    # temporary variable to store all the lines in the file split on the newline 
     fileParsed : seq[string]
+    # store our current line we are parsing to valid nim code
     currLine   : string
+    # store the changed lines, this is the parsed nim code 
     changedLine: string
     # store the lines keyword
     keyWord    : string
@@ -140,9 +145,10 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
         currLine.add('\n')
       
       changedLine.add(currLine)
-      currLine = "" # clear the lines
+      currLine = "" # clear the line
+    #-----LOOP END------>
+
     # add the edited line to the parsed files 
-    # echo changedLine # DEBUG
     newFiles.add(changedLine)
     changedLine = ""
     
@@ -160,13 +166,14 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
   var file: File
   for index,current in newFiles:
     try:
+      # write file contents to new files with the original file names
       file = open(nimFiles[index],fmWrite)
       file.write(current)
     except IOError:
       printInfo("file could not be created",1)
       return false
   
-  echo "Converted files have been created in " & os.getCurrentDir()
+  printInfo("Parsed files are located at: " & os.getCurrentDir(), 4)
   return true
 #------FUNCTION END------>
 
@@ -214,7 +221,7 @@ if params[0] == "--help":
     this can all be easily changed in the 'syntax.json' file when you find it
 
   FLAGS
-    --execute       this will compile and run the files you pass in
+    --compile       this will compile the files you pass in
                     
   Some bugs/features?
     - indentation is not forced, this program uses the pre-existing indentation of the file 
@@ -226,7 +233,7 @@ if params[0] == "--help":
 else:
   var execute = false
   var filesToParse: seq[string]
-  if params[0] == "--execute":
+  if params[0] == "--comipile":
     execute = true
     filesToParse = params[1..params.len-1]
     # echo filesToParse #DEBUG
