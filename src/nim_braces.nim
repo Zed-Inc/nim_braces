@@ -35,6 +35,10 @@ proc printInfo*(contents: string, infoType: int, output = stdout) =
     discard
 
 
+proc startsWith(input: string, checks: openArray[string]): bool =
+  for c in checks:
+    if input.startsWith(c): return true
+  return false
 
 type
   # store the string that is our syntax
@@ -115,10 +119,10 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
       #--------------------------------------->
 
       #------- IF STATEMENT CHECKS ----------->
-      if currLine.strip.startswith("if") and currLine.endsWith(syntax.if_open):
-        currLine[currLine.len - 1] = ':'
-        currLine.add("\n")
-        keyWord = "if"
+      if currLine.strip.startswith(["else","if","elif"]) and currLine.endsWith(syntax.if_open):
+          currLine[currLine.len - 1] = ':'
+          currLine.add("\n")
+        
       elif currLine.strip.endsWith(syntax.if_close) and keyWord == "if":
         # echo "removing closing brace of if statement loop" #DEBUG
         currLine[currLine.len - 1] = ' '
@@ -175,32 +179,22 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
 proc executeNimFiles(files: seq[string]): bool =
 
   var command: string = "nim c -r "
-  # var nimFiles: seq[string]
-  
-  os.setCurrentDir(os.getCurrentDir() & ".tmp/")
-
+  # loop though our passed in files and add them to the command
   for f in files:
-    command = command & f & " "
-
-  # # get all of our converted nim files
-  # for f in os.walkFiles("/*.nim"):
-  #   nimFiles.add(f)
-
-  # #loop through the sequence and add our files to it
-  # for i in nimFiles:
-  #   command = command & i & " "
-
+    command.add(f)
+  echo command
   # run our nim compile command and cd back up to our main directory and delete the .tmp direcotry
   # there's probably a cleaner way to move back up out of the directory 
+
   if os.execShellCmd(command) == 0:
-    assert os.execShellCmd("cd ..") == 0
-    os.removeDir(".tmp")
+    os.setCurrentDir(ParDir)
+    os.removeDir("/.tmp/")
     return true
   else:
-    assert os.execShellCmd("cd ..") == 0
-    os.removeDir(".tmp")
+    os.setCurrentDir(ParDir) 
+    echo os.getCurrentDir()
+    os.removeDir("/.tmp/")
     printInfo("Files could not be compiled!, .tmp/ will be deleted",1)
-
     return false
 
     
