@@ -94,10 +94,6 @@ proc parseNimFile(nimFiles: seq[string], syntax: Syntax): bool =
     # loop thorough the sequence of lines
     for line in fileParsed:
       currLine = line
-
-      #[
-        For the for loops and while loops we need to chop off all whitespace from the start and end
-      #]#
       #--------- FOR LOOP CHECKS ------------->
       if currLine.strip.startswith("for") and currLine.endsWith(syntax.for_open):
         # currLine[currLine.len - 2] = ':'
